@@ -4,7 +4,9 @@ import RPi.GPIO as GPIO
 import time
 import webrtcvad
 import requests
-from secret import token_nondev as token
+import sys
+from subprocess import Popen, PIPE
+from secret import token_mun as token
 
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
@@ -12,7 +14,7 @@ RATE = 16000
 RECORD_SECONDS = 1
 CHUNK = 320
 INPUT_DEVICE = 2
-SHORT_NORMALIZE = (10.0/32768.0)
+SHORT_NORMALIZE = (10.0 / 32768.0)
 LEDPIN = 16
 
 
@@ -33,7 +35,7 @@ def setup_audio():
                     output=False,
                     frames_per_buffer=CHUNK)
     vad = webrtcvad.Vad()
-    vad.set_mode(3) # aggressiveness is 0=least to 3=highest
+    vad.set_mode(3)  # aggressiveness is 0=least to 3=highest
     print("* setup")
     return stream, p, vad
 
@@ -73,7 +75,7 @@ def write_file(frames, count, p):
 
 
 def transcribe(filename, token):
-    #posts a recording to koreromaori.io - requires the filename to
+    # posts a recording to koreromaori.io - requires the filename to
     # be the same as the filepath ie audio is in the same folder as this code
     api_url = "https://koreromaori.io/api/transcription/?method=stream"
     kwargs = {
@@ -96,12 +98,33 @@ def transcribe(filename, token):
         return -1
 
 
-def look_for_words(words):
+def search_kia_ora(words):
     result = 0
     for i in range(len(words)):
-        if words[i] == 'kia' and words[i+1] == 'ora':
+        if words[i] == 'kia' and words[i + 1] == 'ora':
             result = 1
     return result
+
+
+def search_te_tai(words):
+    result = 0
+    for i in range(len(words)):
+        if words[i] == 'te' and words[i+1] == 'tai' and words[i + 2] == 'tokerau':
+            result = 1
+    return result
+
+
+def get_regional_news():
+    kwargs = {}
+    api_url = "https://tehiku.nz/api/te-reo/nga-take/latest"
+    response = requests.get(api_url, **kwargs)
+    response_dict = response.json()
+    media = response_dict['media'][0]
+    media_link = media['media_file']
+    media_len = media['duration'] / 100
+    print("News is {} seconds long".format(media_len))
+    print("Latest news link is {}".format(media_link))
+    return media_link, media_len
 
 
 def finish(stream, p):
@@ -110,6 +133,18 @@ def finish(stream, p):
     p.terminate()
     GPIO.cleanup()
     print('closing')
+
+
+def play_media(media_link, media_len):
+    pipes = dict(stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    Popen(["mplayer", str(media_link)], **pipes)
+    time.sleep(media_len)
+    sys.stdout.flush()
+
+
+def play_me_the_news():
+    media_link, media_len = get_regional_news()
+    play_media(media_link, media_len)
 
 
 def main():
@@ -130,7 +165,7 @@ def main():
                 if quiet_count != 0:
                     quiet_count = 0
                 frames.append(frame)
-                    
+
             elif contains_speech == 0:
                 if loud_count < 8 and quiet_count > 2 and frames != []:
                     loud_count = 0
@@ -146,12 +181,13 @@ def main():
                     frames = []
                     loud_count = 0
                     unsplit_words = transcribe(audio_file, token)
-                    print(unsplit_words)
                     words = unsplit_words.split(" ")
-                    in_dict = look_for_words(words)
                     print('------------------', words, '------------------')
-                    if in_dict:
-                        flash(10)
+                    if words != '':
+                        if search_kia_ora(words):
+                            flash(10)
+                        elif search_te_tai(words):
+                            play_me_the_news()
         except Exception as e:
             finish(stream, p)
             print('exception:  ', e)
@@ -159,7 +195,6 @@ def main():
 
     finish(stream, p)
     print("* done recording")
-
 
 
 main()
