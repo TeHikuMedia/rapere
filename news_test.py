@@ -1,7 +1,8 @@
+import os
 import sys
 import time
 import requests
-from subprocess import Popen, PIPE
+import subprocess
 
 def get_regional_news():
     kwargs = {}
@@ -16,11 +17,7 @@ def get_regional_news():
     return media_link, media_len
 
 def play_media(media_link, media_len):
-    pipes = dict(stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    Popen(["mplayer", str(media_link)], **pipes)
-    # time.sleep(media_len)
-    sys.stdout.flush()
-
+    subprocess.run(["mplayer", media_link])
 
 def play_me_the_news():
     media_link, media_len = get_regional_news()

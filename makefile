@@ -1,11 +1,17 @@
 DOCKER_REGISTRY := docker.dragonfly.co.nz
 IMAGE_NAME := rapere
 IMAGE := $(DOCKER_REGISTRY)/$(IMAGE_NAME)
-RUN ?= docker run $(DOCKER_ARGS) --device /dev/snd --rm -v $$(pwd):/work -w /work -u $(UID):$(GID) $(IMAGE)
+RUN ?= docker run $(DOCKER_ARGS) --device /dev/snd -m 1G --cpus 4 --rm -v $$(pwd):/work -w /work -u $(UID):$(GID) $(IMAGE)
 UID ?= $(shell id -u)
 GID ?= $(shell id -g)
 DOCKER_ARGS ?= 
 GIT_TAG ?= $(shell git log --oneline | head -n1 | awk '{print $$1}')
+
+news_test: DOCKER_ARGS=-it
+news_test: GID=root
+news_test: UID=root
+news_test:
+	$(RUN) python3 news_test.py
 
 .PHONY: docker
 docker:
