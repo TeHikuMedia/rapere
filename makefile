@@ -1,7 +1,7 @@
 DOCKER_REGISTRY := docker.dragonfly.co.nz
 IMAGE_NAME := rapere
 IMAGE := $(DOCKER_REGISTRY)/$(IMAGE_NAME)
-RUN ?= docker run $(DOCKER_ARGS) --device /dev/snd -m 1G --cpus 4 --rm -v $$(pwd):/work -w /work -u $(UID):$(GID) $(IMAGE)
+RUN ?= docker run $(DOCKER_ARGS) --device /dev/snd -m 1G --cpus 4 --rm -v $$(pwd):/work -w /work -u $(UID):$(GID) $(IMAGE):latest
 UID ?= $(shell id -u)
 GID ?= $(shell id -g)
 DOCKER_ARGS ?= 
