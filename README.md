@@ -25,7 +25,7 @@ sudo apt-get install portaudio19-dev
 
 (You may want to install this into a virtual envonrment?)
 ```
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 
