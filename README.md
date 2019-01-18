@@ -17,7 +17,7 @@ If those words correlate to those expected for asking the news to play, then API
 
 ### Install system level requirements
 ```
-sudo apt-get install python3-pip python-pyaudio python3-pyaudio
+sudo apt-get install python-pyaudio python3-pyaudio
 sudo apt-get install portaudio19-dev
 ```
 
@@ -25,7 +25,7 @@ sudo apt-get install portaudio19-dev
 
 (You may want to install this into a virtual envonrment?)
 ```
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 
