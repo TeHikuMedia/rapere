@@ -1,12 +1,10 @@
 import pyaudio
 import wave
 import RPi.GPIO as GPIO
-import time
 import webrtcvad
 import requests
-import sys
-from subprocess import Popen, PIPE
-from secret import token_mun as token
+import subprocess
+from secret import token
 
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
@@ -19,6 +17,7 @@ LEDPIN = 16
 
 
 def setup_pins():
+    # set up the Raspberry Pi output pins for the led lighting
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(LEDPIN, GPIO.OUT)
     GPIO.setwarnings(False)
@@ -26,6 +25,7 @@ def setup_pins():
 
 
 def setup_audio():
+    #set up parameters and open stream for recording, also initialises voice detection
     p = pyaudio.PyAudio()
     stream = p.open(format=FORMAT,
                     channels=CHANNELS,
@@ -36,15 +36,8 @@ def setup_audio():
                     frames_per_buffer=CHUNK)
     vad = webrtcvad.Vad()
     vad.set_mode(3)  # aggressiveness is 0=least to 3=highest
-    print("* setup")
+    print("Setup complete")
     return stream, p, vad
-
-
-def flash(period):
-    GPIO.output(LEDPIN, GPIO.HIGH)
-    print('LED on ({})'.format(period))
-    time.sleep(period)
-    GPIO.output(LEDPIN, GPIO.LOW)
 
 
 def led_on():
@@ -61,22 +54,21 @@ def get_data(stream):
     return data
 
 
-def write_file(frames, count, p):
-    print("Writing to file")
-    filename = 'out{}.wav'.format(count)
+def write_file(frames, p):
+    #code to write the output file when audio has been detected using input as frames
+    filename = 'outfile.wav'
     wf = wave.open(filename, 'wb')
     wf.setnchannels(CHANNELS)
     wf.setsampwidth(p.get_sample_size(FORMAT))
     wf.setframerate(RATE)
     wf.writeframes(b''.join(frames))
     wf.close()
-    count += 1
-    return filename, count
+    return filename
 
 
-def transcribe(filename, token):
-    # posts a recording to koreromaori.io - requires the filename to
-    # be the same as the filepath ie audio is in the same folder as this code
+def transcribe(filename):
+    # posts a recording to koreromaori.io - requires that audio file is in the same folder as this code
+    print('Transcribing...')
     api_url = "https://koreromaori.io/api/transcription/?method=stream"
     kwargs = {
         'headers': {
@@ -98,20 +90,65 @@ def transcribe(filename, token):
         return -1
 
 
-def search_kia_ora(words):
+def said_kia_ora(words):
     result = 0
-    for i in range(len(words)):
-        if words[i] == 'kia' and words[i + 1] == 'ora':
-            result = 1
+    phrase1 = 'kia ora'.split(' ')
+    if compare_phrases(words, phrase1):
+        result = 1
     return result
 
 
-def search_te_tai(words):
+def compare_phrases(words, phrase):
+    ##checks if all items in a list of words of phrase are included in list of heard words
     result = 0
-    for i in range(len(words)):
-        if words[i] == 'te' and words[i+1] == 'tai' and words[i + 2] == 'tokerau':
-            result = 1
+    intersect = set(words) & set(phrase)
+    if intersect == set(phrase):
+        result = 1
     return result
+
+
+def asked_for_news_phrase(words):
+    #identifies if the phrase spoken is included in one of those expected
+    asked_news = 0
+    phrase1 = u'he aha ng{a} take o te w{a} ki Te Tai Tokerau'.format(a = u"\u0101", e = u"\u0113", i =u"\u012B", o = "\u014D", u = u"\u016B").lower().split(" ")
+    phrase2 = u'Whakap{a}hongia ng{a} p{u}rongo k{o}rero o Te Tai Tokerau'.format(a = u"\u0101", e = u"\u0113", i =u"\u012B", o = "\u014D", u = u"\u016B").lower().split(" ")
+    phrase3 = u'Whakap{a}hotia ng{a} p{u}rongo k{o}rero o Te Tai Tokerau'.format(a = u"\u0101", e = u"\u0113", i =u"\u012B", o = "\u014D", u = u"\u016B").lower().split(" ")
+    phrase4 = u'Whakap{a}hotia ng{a} p{u}rongo k{o}rero o te motu'.format(a = u"\u0101", e = u"\u0113", i =u"\u012B", o = "\u014D", u = u"\u016B").lower().split(" ")
+    phrase5 = u'Whakatairangahia ng{a} p{u}rongo k{o}rero o te w{a}'.format(a = u"\u0101", e = u"\u0113", i =u"\u012B", o = "\u014D", u = u"\u016B").lower().split(" ")
+    phrase6 = u'Whakatairangatia ng{a} kaupapa o te w{a} ki Te Tai Tokerau'.format(a = u"\u0101", e = u"\u0113", i =u"\u012B", o = "\u014D", u = u"\u016B").lower().split(" ")
+    phrase7 = u'He aha ng{a} kaupapa o te w{a} ki Te Tai Tokerau'.format(a = u"\u0101", e = u"\u0113", i =u"\u012B", o = "\u014D", u = u"\u016B").lower().split(" ")
+    phrase8 = u'He aha ng{a} p{u}rongo k{o}rero {a} motu'.format(a = u"\u0101", e = u"\u0113", i =u"\u012B", o = "\u014D", u = u"\u016B").lower().split(" ")
+    phrase9 = 'kua pau te hau'.lower().split()
+    for phrase in (phrase1, phrase2, phrase3, phrase4, phrase5, phrase6, phrase7, phrase8, phrase9):
+        if compare_phrases(words, phrase):
+            asked_news = 1
+    return asked_news
+
+
+def asked_for_news(words):
+    #identifies if the phrase spoken is included in one of those expected
+    asked_news = 0
+    count = 0
+    max = len(words)
+    pt1 = 0
+    pt2 = 0
+    list1 = u'aha whakatairangahia whakap{a}hongia whakap{a}hotia'.format(a = u"\u0101").split(' ')
+    list2 = u'take p{u}rongo kaupapa'.format(u = u"\u016B").split(' ')
+    list3 = u'motu w{a} tokerau'.format(a = u"\u0101").split(' ')
+    for i in range(count, max):
+        if words[i] in list1:
+            pt1 = 1
+            count = i
+    if pt1 == 1:
+        for i in range(count, max):
+            if words[i] in list2:
+                pt2 = 1
+                count = i
+    if pt2 == 1:
+        for i in range(count, max):
+            if words[i] in list3:
+                asked_news = 1
+    return asked_news
 
 
 def get_regional_news():
@@ -122,9 +159,13 @@ def get_regional_news():
     media = response_dict['media'][0]
     media_link = media['media_file']
     media_len = media['duration'] / 100
-    print("News is {} seconds long".format(media_len))
-    print("Latest news link is {}".format(media_link))
+    print("Latest news is {} seconds long".format(media_len))
     return media_link, media_len
+
+
+def play_me_the_news():
+    media_link, media_len = get_regional_news()
+    subprocess.run(["mplayer", media_link])
 
 
 def finish(stream, p):
@@ -132,19 +173,6 @@ def finish(stream, p):
     stream.close()
     p.terminate()
     GPIO.cleanup()
-    print('closing')
-
-
-def play_media(media_link, media_len):
-    pipes = dict(stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    Popen(["mplayer", str(media_link)], **pipes)
-    time.sleep(media_len)
-    sys.stdout.flush()
-
-
-def play_me_the_news():
-    media_link, media_len = get_regional_news()
-    play_media(media_link, media_len)
 
 
 def main():
@@ -159,7 +187,6 @@ def main():
         try:
             frame = get_data(stream)
             contains_speech = vad.is_speech(frame, RATE)
-
             if contains_speech:
                 loud_count += 1
                 if quiet_count != 0:
@@ -176,25 +203,27 @@ def main():
                     frames = []
                     loud_count = 0
 
-                if quiet_count >= 6 and loud_count > 20 and frames != []:
-                    audio_file, count = write_file(frames, count, p)
+                if quiet_count >= 20 and loud_count > 50 and frames != []:
+                    audio_file = write_file(frames, p)
                     frames = []
                     loud_count = 0
-                    unsplit_words = transcribe(audio_file, token)
+                    unsplit_words = transcribe(audio_file)
                     words = unsplit_words.split(" ")
-                    print('------------------', words, '------------------')
+                    print('I heard: ', unsplit_words)
                     if words != '':
-                        if search_kia_ora(words):
-                            flash(10)
-                        elif search_te_tai(words):
+                        if said_kia_ora(words):
+                            flash(4)
+                        elif asked_for_news(words):
+                            play_me_the_news()
+                        elif asked_for_news_phrase(words):
+                            print('You said an exact phrase!!')
                             play_me_the_news()
         except Exception as e:
             finish(stream, p)
-            print('exception:  ', e)
+            print('Exception:  ', e)
             break
 
     finish(stream, p)
-    print("* done recording")
-
+    print('Done recording')
 
 main()
