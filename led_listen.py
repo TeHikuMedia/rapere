@@ -151,6 +151,32 @@ def asked_for_news(words):
     return asked_news
 
 
+def asked_for_radio(words):
+    asked_radio = 0
+    count = 0
+    max = len(words)
+    pt1 = 0
+    pt2 = 0
+    list1 = u'whakatairangahia whakatairangatia whakap{a}hongia whakap{a}hotia'.format(a = u"\u0101").split(' ')
+    for i in range(count, max):
+        if words[i] in list1:
+            pt1 = 1
+            count = i
+    if pt1 == 1 and i >= 2:
+        for i in range(count, max):
+            if words[i-2] == 'te' and words[i-1] == "reo" and words[i] == 'irirangi':
+                pt2 = 1
+                count = i
+    if pt2 == 1:
+        for i in range(count, max):
+            if words[i] == "muriwhenua":
+                asked_radio = 1
+            elif words[i] == 'ika':
+                if words[i-3] == 'hiku' and words[i-2] == 'o' and words[i-1] == 'te':
+                    asked_radio = 1
+    return asked_radio
+
+
 def get_regional_news():
     kwargs = {}
     api_url = "https://tehiku.nz/api/te-reo/nga-take/latest"
@@ -218,6 +244,8 @@ def main():
                         elif asked_for_news_phrase(words):
                             print('You said an exact phrase!!')
                             play_me_the_news()
+                        elif asked_for_radio(words):
+                            subprocess.run(["mplayer", "http://radio.tehiku.live:8030/stream;1"])
         except Exception as e:
             finish(stream, p)
             print('Exception:  ', e)
