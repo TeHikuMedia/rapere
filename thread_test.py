@@ -1,9 +1,5 @@
-## program in current state has the error that when run, it says it is 
-#playing audio but nothing plays. Also keyboard interrupt does not stop 
-#the program either: the only way to stop it is to exit the terminal
-
-# Attempting to use multiprocessing to wait for user input while playing 
-#audio in the background
+# Use subprocess to wait for user input while playing 
+# audio in the background
 
 import subprocess
 import os
