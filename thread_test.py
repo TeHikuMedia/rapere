@@ -20,8 +20,8 @@ def askInput(q):
     #print(q.get())
 
 
-def listen():
-    while askInput():
+def listen(q):
+    while askInput(q):
         pass 
 
 
