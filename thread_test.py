@@ -6,50 +6,49 @@
 #audio in the background
 
 import subprocess
-from multiprocessing import Process, Queue
-import time
+import os
+import signal
 
+COMMAND = "mplayer http://radio.tehiku.live:8030/stream"
 
-def askInput(q):
-    #uncommenting this line gives EOF errors as the program does not wait for the input to be received from user
-    choice = input("listen? 0 = no change; 1 = start playing; 2 = stop") 
-    #  i = 1
-    print(choice)
-    q.put(i)
-    return True
-    #print(q.get())
+class Player:
+    def __init__(self):
+        print('initialise')
+        self.process = None
 
+    def is_playing(self):
+        return self.process is not None
 
-def listen(q):
-    while askInput(q):
-        pass 
+    def play(self):
+        if not self.is_playing():
+            self.process = subprocess.Popen(COMMAND, 
+                shell=True, # Run in a subshell so that the command doesn't mess with your shell
+                stderr=subprocess.DEVNULL,  # You could send this to a pipe instead if you wanted to see what was going on 
+                stdout=subprocess.DEVNULL, # You could send this to a pipe if you wanted to catch errors
+                start_new_session=True) # This argument means that we can kill mplayer and all the child processes at once
+            print('playing')
+        else:
+            print('already playing')
 
+    def stop(self):
+        if self.is_playing():
+            os.killpg(os.getpgid(self.process.pid), signal.SIGTERM) # Kill all processes in the same process group
+            self.process = None
+            print('pause')
+        else:
+            print('already paused')
 
+if __name__ == '__main__':
+    player = Player()
+    while True:
+        choice = input("what do you want to do (1 = play; 2 = pause; else exit)?\n")
+        if choice == '1':
+            player.play()
+        elif choice == '2':
+            player.stop()
+        else:
+            break
+    if player.is_playing():
+        player.stop()
+    print('Good-bye!')
 
-def play_controls(q):
-    global proc
-    q = q.get()
-    if q == 1:
-        print('starting playing')
-        proc = subprocess.Popen(["mplayer", "http://radio.tehiku.live:8030/stream < /dev/null > /dev/null 2>&1 &", ])
-    elif q == 2:
-        print('stop playing now')
-        proc.kill()
-        #code to stop playing
-    elif q == 0:
-        #keep things as they are, stopped or going
-        pass
-
-
-def main():
-    q = Queue()
-    q.put(1)
-    p = Process(target=play_controls, args=(q,), daemon=True)
-    #r = Process(target=listen, args=(q,))
-    listen(q)
-    p.start()
-    #r.start()
-    p.join()
-    #r.join()
-    
-main()
