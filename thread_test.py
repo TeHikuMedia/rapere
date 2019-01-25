@@ -10,20 +10,31 @@ from multiprocessing import Process, Queue
 import time
 
 
-def listen(q):
- #   i = input("listen? 0 = no change; 1 = start playing; 2 = stop")  #uncommenting this line gives EOF errors as the program does not wait for the input to be received from user
-    i = 1
+def askInput(q):
+    #uncommenting this line gives EOF errors as the program does not wait for the input to be received from user
+    choice = input("listen? 0 = no change; 1 = start playing; 2 = stop") 
+    #  i = 1
+    print(choice)
     q.put(i)
-    print(q.get())
+    return True
+    #print(q.get())
+
+
+def listen():
+    while askInput():
+        pass 
+
 
 
 def play_controls(q):
+    global proc
     q = q.get()
     if q == 1:
         print('starting playing')
-        subprocess.Popen(["mplayer", "http://radio.tehiku.live:8030/stream < /dev/null > /dev/null 2>&1 &", ])
+        proc = subprocess.Popen(["mplayer", "http://radio.tehiku.live:8030/stream < /dev/null > /dev/null 2>&1 &", ])
     elif q == 2:
         print('stop playing now')
+        proc.kill()
         #code to stop playing
     elif q == 0:
         #keep things as they are, stopped or going
@@ -34,11 +45,11 @@ def main():
     q = Queue()
     q.put(1)
     p = Process(target=play_controls, args=(q,), daemon=True)
-    r = Process(target=listen, args=(q,))
+    #r = Process(target=listen, args=(q,))
+    listen(q)
     p.start()
-    r.start()
+    #r.start()
     p.join()
-    r.join()
-
-
+    #r.join()
+    
 main()
