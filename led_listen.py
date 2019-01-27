@@ -5,6 +5,8 @@ import webrtcvad
 import requests
 import subprocess
 from secret import token
+import os
+import signal
 
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
@@ -14,6 +16,36 @@ CHUNK = 320
 INPUT_DEVICE = 2    #change to suit your setup
 SHORT_NORMALIZE = (10.0 / 32768.0)
 LEDPIN = 16
+
+RADIO_COMMAND = "mplayer http://radio.tehiku.live:8030/stream"
+
+
+class Player:
+    def __init__(self):
+        print('initialise')
+        self.process = None
+
+    def is_playing(self):
+        return self.process is not None
+
+    def play(self, command):
+        if not self.is_playing():
+            self.process = subprocess.Popen(command,
+                shell=True, # Run in a subshell so that the command doesn't mess with your shell
+                stderr=subprocess.DEVNULL,  # You could send this to a pipe instead if you wanted to see what was going on
+                stdout=subprocess.DEVNULL, # You could send this to a pipe if you wanted to catch errors
+                start_new_session=True) # This argument means that we can kill mplayer and all the child processes at once
+            print('playing')
+        else:
+            print('already playing')
+
+    def stop(self):
+        if self.is_playing():
+            os.killpg(os.getpgid(self.process.pid), signal.SIGTERM) # Kill all processes in the same process group
+            self.process = None
+            print('pause')
+        else:
+            print('already paused')
 
 
 def setup_pins():
@@ -46,6 +78,12 @@ def led_on():
 
 
 def led_off():
+    GPIO.output(LEDPIN, GPIO.LOW)
+
+
+def flash(t):
+    GPIO.output(LEDPIN, GPIO.HIGH)
+    time.sleep(t)
     GPIO.output(LEDPIN, GPIO.LOW)
 
 
@@ -189,10 +227,25 @@ def get_regional_news():
     return media_link, media_len
 
 
-def play_me_the_news():
+def play_me_the_news(player):
     media_link, media_len = get_regional_news()
-    subprocess.run(["mplayer", media_link])
+    news_command = "mplayer {}".format(media_link)
+    player.play(news_command)
     led_on()
+
+
+def do_something(audio_file, player):
+    unsplit_words = transcribe(audio_file)
+    words = unsplit_words.split(" ")
+    print('I heard: ', unsplit_words)
+    if words != '':
+        pass
+    elif said_kia_ora(words):
+        flash(4)
+    elif asked_for_news(words):
+        play_me_the_news(player)
+    elif asked_for_radio(words):
+        player.play(RADIO_COMMAND)
 
 
 def finish(stream, p):
@@ -205,10 +258,10 @@ def finish(stream, p):
 def main():
     setup_pins()
     (stream, p, vad) = setup_audio()
-    count = 0
     quiet_count = 0
     loud_count = 0
     frames = []
+    player = Player()
 
     while 1:
         try:
@@ -221,32 +274,17 @@ def main():
                 frames.append(frame)
 
             elif contains_speech == 0:
-                if loud_count < 8 and quiet_count > 2 and frames != []:
+                if loud_count < 13 and quiet_count > 4 and frames != []:
                     loud_count = 0
                     frames = []
                 quiet_count += 1
 
-                if quiet_count > 20 and loud_count != 0:
-                    frames = []
-                    loud_count = 0
-
-                if quiet_count >= 20 and loud_count > 50 and frames != []:
+                if quiet_count > 20 and loud_count > 50 and frames != []:
                     audio_file = write_file(frames, p)
                     frames = []
                     loud_count = 0
-                    unsplit_words = transcribe(audio_file)
-                    words = unsplit_words.split(" ")
-                    print('I heard: ', unsplit_words)
-                    if words != '':
-                        if said_kia_ora(words):
-                            flash(4)
-                        elif asked_for_news(words):
-                            play_me_the_news()
-                        elif asked_for_news_phrase(words):
-                            print('You said an exact phrase!!')
-                            play_me_the_news()
-                        elif asked_for_radio(words):
-                            subprocess.Popen(["mplayer", "http://radio.tehiku.live:8030/stream;1"])
+                    do_something(audio_file, player)
+
         except Exception as e:
             finish(stream, p)
             print('Exception:  ', e)
@@ -256,3 +294,4 @@ def main():
     print('Done recording')
 
 main()
+
