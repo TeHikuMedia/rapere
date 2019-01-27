@@ -11,7 +11,7 @@ CHANNELS = 1
 RATE = 16000
 RECORD_SECONDS = 1
 CHUNK = 320
-INPUT_DEVICE = 2
+INPUT_DEVICE = 2    #change to suit your setup
 SHORT_NORMALIZE = (10.0 / 32768.0)
 LEDPIN = 16
 
@@ -192,6 +192,7 @@ def get_regional_news():
 def play_me_the_news():
     media_link, media_len = get_regional_news()
     subprocess.run(["mplayer", media_link])
+    led_on()
 
 
 def finish(stream, p):
@@ -245,7 +246,7 @@ def main():
                             print('You said an exact phrase!!')
                             play_me_the_news()
                         elif asked_for_radio(words):
-                            subprocess.run(["mplayer", "http://radio.tehiku.live:8030/stream;1"])
+                            subprocess.Popen(["mplayer", "http://radio.tehiku.live:8030/stream;1"])
         except Exception as e:
             finish(stream, p)
             print('Exception:  ', e)
