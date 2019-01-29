@@ -1,3 +1,4 @@
+
 import pyaudio
 import wave
 import RPi.GPIO as GPIO
@@ -6,19 +7,18 @@ import requests
 import subprocess
 from secret import token
 import os
+import time
 import signal
 
 FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 16000
-RECORD_SECONDS = 1
-CHUNK = 320
-INPUT_DEVICE = 2    #change to suit your setup
-SHORT_NORMALIZE = (10.0 / 32768.0)
-LEDPIN = 16
+CHANNELS = 1        # microphone needs to record in mono (1 channel) rather than stereo for WebRTCVAD
+RATE = 16000        # set to the default sample rate of your mic
+CHUNK = 320         # CHUNK[frames] = RATE[frames/sec] * 20[ms] / 1000[scale factor]
+INPUT_DEVICE = 2    # change to suit your setup
+LEDPINS = [11, 13, 16, 18]         # change depending on what pin LED is plugged into (BOARD formatting)
 
 RADIO_COMMAND = "mplayer http://radio.tehiku.live:8030/stream"
-
+BREADBOARD = 1 #set to 1 if running on a raspberry pi with breadboard set up, 0 otherwise
 
 class Player:
     def __init__(self):
@@ -49,11 +49,13 @@ class Player:
 
 
 def setup_pins():
-    # set up the Raspberry Pi output pins for the led lighting
+    # set up the Raspberry Pi output pin for the led lighting
     GPIO.setmode(GPIO.BOARD)
-    GPIO.setup(LEDPIN, GPIO.OUT)
+    for pin in LEDPINS:
+        GPIO.setup(pin, GPIO.OUT)
     GPIO.setwarnings(False)
-    GPIO.output(LEDPIN, GPIO.LOW)
+    for pin in LEDPINS:
+        GPIO.output(pin, GPIO.LOW)
 
 
 def setup_audio():
@@ -73,18 +75,21 @@ def setup_audio():
 
 
 def led_on():
-    GPIO.output(LEDPIN, GPIO.HIGH)
-    print('LED on')
+    for pin in LEDPINS:
+        GPIO.output(pin, GPIO.HIGH)
 
 
 def led_off():
-    GPIO.output(LEDPIN, GPIO.LOW)
+    for pin in LEDPINS:
+        GPIO.output(pin, GPIO.LOW)
 
 
 def flash(t):
-    GPIO.output(LEDPIN, GPIO.HIGH)
+    for pin in LEDPINS:
+        GPIO.output(pin, GPIO.HIGH)
     time.sleep(t)
-    GPIO.output(LEDPIN, GPIO.LOW)
+    for pin in LEDPINS:
+        GPIO.output(pin, GPIO.LOW)
 
 
 def get_data(stream):
@@ -92,16 +97,17 @@ def get_data(stream):
     return data
 
 
-def write_file(frames, p):
+def write_file(frames, p, count): #remove count to overwrite each time and not store data
     #code to write the output file when audio has been detected using input as frames
-    filename = 'outfile.wav'
+    filename = 'outfile{}.wav'.format(count)
     wf = wave.open(filename, 'wb')
     wf.setnchannels(CHANNELS)
     wf.setsampwidth(p.get_sample_size(FORMAT))
     wf.setframerate(RATE)
     wf.writeframes(b''.join(frames))
     wf.close()
-    return filename
+    count += 1
+    return filename, count
 
 
 def transcribe(filename):
@@ -162,6 +168,16 @@ def asked_for_news_phrase(words):
             asked_news = 1
     return asked_news
 
+def asked_to_stop(words):
+    result = 0
+    max = len(words)
+    list1 = u'k{a}ti whakamutu kati'.format(a = u"\u0101").split(' ')
+    for i in range(0, max):
+        if words[i] in list1:
+            pt1 = 1
+            result = 1
+    return result
+
 
 def asked_for_news(words):
     #identifies if the phrase spoken is included in one of those expected
@@ -191,7 +207,7 @@ def asked_for_news(words):
 
 def asked_for_radio(words):
     asked_radio = 0
-    count = 0
+    count = 1
     max = len(words)
     pt1 = 0
     pt2 = 0
@@ -231,32 +247,38 @@ def play_me_the_news(player):
     media_link, media_len = get_regional_news()
     news_command = "mplayer {}".format(media_link)
     player.play(news_command)
-    led_on()
+    if BREADBOARD:
+        led_on()
 
 
 def do_something(audio_file, player):
     unsplit_words = transcribe(audio_file)
     words = unsplit_words.split(" ")
     print('I heard: ', unsplit_words)
-    if words != '':
-        pass
-    elif said_kia_ora(words):
-        flash(4)
+    if said_kia_ora(words):
+        print("Kia ora!")
+        if BREADBOARD:
+            flash(4)
     elif asked_for_news(words):
         play_me_the_news(player)
     elif asked_for_radio(words):
         player.play(RADIO_COMMAND)
+    elif asked_to_stop(words):
+        player.stop()
 
 
 def finish(stream, p):
+    player.stop()
     stream.stop_stream()
     stream.close()
     p.terminate()
-    GPIO.cleanup()
+    if BREADBOARD:
+        GPIO.cleanup()
 
 
-def main():
+if __name__ == '__main__':
     setup_pins()
+    count = 0
     (stream, p, vad) = setup_audio()
     quiet_count = 0
     loud_count = 0
@@ -280,18 +302,17 @@ def main():
                 quiet_count += 1
 
                 if quiet_count > 20 and loud_count > 50 and frames != []:
-                    audio_file = write_file(frames, p)
+                    audio_file, count = write_file(frames, p, count)
                     frames = []
                     loud_count = 0
                     do_something(audio_file, player)
 
         except Exception as e:
-            finish(stream, p)
+            finish(stream, p, player)
             print('Exception:  ', e)
             break
 
     finish(stream, p)
     print('Done recording')
 
-main()
 

@@ -1,3 +1,4 @@
 secret.py
-*.wav
+start.sh
+
 __pycache__
