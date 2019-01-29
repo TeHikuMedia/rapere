@@ -61,9 +61,11 @@ Follow directions on:
 http://www.voxforge.org/home/docs/faq/faq/linux-how-to-determine-your-audio-cards-or-usb-mics-maximum-sampling-rate
 
 #### Calculate chunk size:
-Need a chunk size that is the right with the default frequency of the microphone to get a 10, 20 or 30ms chunk for WebRTCVAD. For a 20ms frame, use:
-CHUNK(frames)=RATE(frames/sec)*20(ms)/1000(scale factor)
-Eg. if rate is 16000Hz then to get a 20ms frame, need a chunk size of 16000*20/1000=320.
+Need a chunk size that is the right with the default frequency of the microphone to get a 10, 20 or 30ms chunk for WebRTCVAD. For a 20ms frame, use:    CHUNK(frames) = RATE(frames/sec) * 20(ms) / 1000(scale factor)
+
+CHUNK = RATE * 20 / 1000
+
+Example: if rate is 16000Hz, then to get a 20ms frame the chunk size should be (16000 * 20 / 1000) = 320.  `CHUNK` in `led_listen.py` should be set to the value calculated.
 
 
 ### Other Parts of Code
