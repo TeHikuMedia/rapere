@@ -52,6 +52,7 @@ Example output:
 Input Device id  2  -  Lync Audio Device: USB Audio (hw:1,0)
 Input Device id  5  -  default
 ```
+
 Set `INPUT_DEVICE` to the device ID of the desired input input device from this list. If the device to be used is the Lync Audio Device, set `INPUT_DEVICE = 2` in `led_listen.py`.
 
 #### Find the microphone default sample rate
@@ -77,6 +78,10 @@ Go to https://koreromaori.io/, click Sign in then Sign up and create an account.
 #### Set up credentials file:
 From downloading the contents of the github repo, there is a file called `secret_README.py`. In this file, change `xxxx` inside the quotation marks to your token from koreromaori.io. Rename the file to `secret.py`.
 
+#### Run without a Breadboard:
+This program can be run without a breadboard. By setting `BREADBOARD = 0`, all calls to turn on or off LEDs are removed. If running on a desktop without GPIO ports, set `BREADBOARD = 0` and also comment out the line `import RPi.GPIO as GPIO`.
+
+
 #### Start Program on Boot:
 In start_README.py, modify the file to have full file paths that correspond to locations on your computer. Change the file name to start.py.
 
@@ -84,23 +89,22 @@ In the terminal, run:
 ```
 sudo nano /etc/rc.local
 ```
-At the end of the file, insert the following command above the final line of `exit 0`:
 
+At the end of the file, insert the following command above the final line of `exit 0`:
 ```
 bash /home/pi/your_filepath/rapere/start.sh
 ```
 
 Which should be adapted to have the filepath to start.sh within the rapere directory. Now whenever the Raspberry Pi is booted, or whenever the command `bash start.py` is run, the file specified in `start.py` (which you could make the test file or `led_listen.py`) will run.
 
-
 ```
 sudo nano /home/pi/.bashrc
 ```
+
 At the very end of the file, add the lines below, adapting for your own filepath:
 ```
 echo Running at boot
 sudo python dev/rapere/led_listen.py
-
 ```
 
 #### For developers: how to change to using the dev.koreromaori.io site:
