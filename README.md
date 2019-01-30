@@ -78,7 +78,21 @@ Go to https://koreromaori.io/, click Sign in then Sign up and create an account.
 From downloading the contents of the github repo, there is a file called `secret_README.py`. In this file, change `xxxx` inside the quotation marks to your token from koreromaori.io. Rename the file to `secret.py`.
 
 #### Start Program on Boot:
-In terminal, enter:
+In start_README.py, modify the file to have full file paths that correspond to locations on your computer. Change the file name to start.py.
+
+In the terminal, run:
+```
+sudo nano /etc/rc.local
+```
+At the end of the file, insert the following command above the final line of `exit 0`:
+
+```
+bash /home/pi/your_filepath/rapere/start.sh
+```
+
+Which should be adapted to have the filepath to start.sh within the rapere directory. Now whenever the Raspberry Pi is booted, or whenever the command `bash start.py` is run, the file specified in `start.py` (which you could make the test file or `led_listen.py`) will run.
+
+
 ```
 sudo nano /home/pi/.bashrc
 ```
@@ -88,7 +102,6 @@ echo Running at boot
 sudo python dev/rapere/led_listen.py
 
 ```
-
 
 #### For developers: how to change to using the dev.koreromaori.io site:
 In led_listen.py code, change each reference that is `https://koreromaori.io...` to `https://dev.koreromaori.io...` In `secret.py`, change token to your token from the dev site.
