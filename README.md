@@ -1,17 +1,16 @@
 # RĀPERE
 
-Kōrero Māori on the raspberry pi
+Kōrero Māori on the raspberry pi.
 
 ## Purpose
-This project has the purpose of aiding in the development of a Maori voice assistant.
+This project has the purpose of aiding in the development of a Māori voice assistant.
 
 ## Motivation
-The motivation behind this proect is to make Te Reo Maori more accessible and fun in the digital age.
+The motivation behind this proect is to make Te Reo Māori more accessible and fun in the digital age.
 
 
 ## How it Works
-It uses voice detection software to record phrases spokeninto the microphone, then uses API calls to tehiku.nz to transcribe this audio into words.
-If those words correlate to those expected for asking the news to play, then API calls to tehiku.nz are used to get the most recent Northland news from Te Hiku Media.
+It uses voice detection software to record phrases spoken into the microphone, then uses API calls to [koreromaori.io](https://koreromaori.io/) to transcribe this audio into words. If those words correlate to those expected for asking the news to play, then API calls to [tehiku.nz](https://www.tehiku.nz) are used to get the most recent Northland news from Te Hiku Media.
 
 
 ![ Raspberry pi set up for talking to Kōrero Māori"](rapere.jpg?raw=true "Raspberry pi set up for talking to Kōrero Māori")
