@@ -119,3 +119,4 @@ python3 led_listen.py
 ```
 Kōrero into your microphone to ask for the news or the radio stream, or say 'kia ora' to briefly turn on a light.
 
+![ Raspberry pi set up for talking to Kōrero Māori"](rapere.jpg?raw=true "Raspberry pi set up for talking to Kōrero Māori")
