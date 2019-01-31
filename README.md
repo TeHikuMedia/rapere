@@ -14,6 +14,9 @@ It uses voice detection software to record phrases spokeninto the microphone, th
 If those words correlate to those expected for asking the news to play, then API calls to tehiku.nz are used to get the most recent Northland news from Te Hiku Media.
 
 
+![ Raspberry pi set up for talking to Kōrero Māori"](rapere.jpg?raw=true "Raspberry pi set up for talking to Kōrero Māori")
+
+
 ## Installation
 
 ### Install system level requirements
@@ -119,4 +122,10 @@ python3 led_listen.py
 ```
 Kōrero into your microphone to ask for the news or the radio stream, or say 'kia ora' to briefly turn on a light.
 
-![ Raspberry pi set up for talking to Kōrero Māori"](rapere.jpg?raw=true "Raspberry pi set up for talking to Kōrero Māori")
+## Kaitiakitanga licence
+
+This project is released under the [Kaitiakitanga licence](https://github.com/TeHikuMedia/Kaitiakitanga-License/blob/master/LICENSE.md).
+
+## Contact
+
+Make an issue or send an email to koreromaori@tehiku.nz.
