@@ -1,8 +1,9 @@
-# RAPERE
+# RĀPERE
 
 Kōrero Māori on the raspberry pi
+
 ## Purpose
-This project has the purpose of aiding in the development in a Maori voice assistant.
+This project has the purpose of aiding in the development of a Maori voice assistant.
 
 ## Motivation
 The motivation behind this proect is to make Te Reo Maori more accessible and fun in the digital age.
