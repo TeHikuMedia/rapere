@@ -1,0 +1,10 @@
+
+[Unit]
+Description=rapere service
+After=network.target
+
+[Service]
+ExecStart=/home/pi/dev/rapere/start.sh
+
+[Install]
+WantedBy=multi-user.target
