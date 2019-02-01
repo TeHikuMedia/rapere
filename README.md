@@ -86,29 +86,31 @@ This program can be run without a breadboard. By setting `BREADBOARD = 0`, all c
 
 
 #### Start Program on Boot:
-In start_README.py, modify the file to have full file paths that correspond to locations on your computer. Change the file name to start.py.
-
-In the terminal, run:
-```
-sudo nano /etc/rc.local
-```
-
-At the end of the file, insert the following command above the final line of `exit 0`:
-```
-bash /home/pi/your_filepath/rapere/start.sh
-```
-
-Which should be adapted to have the filepath to start.sh within the rapere directory. Now whenever the Raspberry Pi is booted, or whenever the command `bash start.py` is run, the file specified in `start.py` (which you could make the test file or `led_listen.py`) will run.
+In `start_README.sh`, modify the file to have full file paths that correspond to locations on your computer. Change the file name to `start.sh`. In `rapere.service_README`, modify the file path listed under `[Service]` to correspond to your directory path to the file `start.sh`, and rename the file to `rapere.service`. This is the file that will be called on the Raspberry Pi's boot, which will call `start.sh` which runs the file `led_listen.py`. Copy `rapere.service` to the correct location in the terminal by using:
 
 ```
-sudo nano /home/pi/.bashrc
+cp rapere.service /etc/systemd/system/rapere.service
 ```
 
-At the very end of the file, add the lines below, adapting for your own filepath:
+Run the following commands:
+
 ```
-echo Running at boot
-sudo python dev/rapere/led_listen.py
+sudo systemctl daemon-reload
+run sudo systemctl enable rapere
 ```
+
+To test that this is working, run the following in the terminal:
+
+```
+sudo service rapere start
+```
+
+This should start `led_listen.py`. Running:
+```
+sudo service rapere stop
+```
+Should stop the program from running.
+
 
 #### For developers: how to change to using the dev.koreromaori.io site:
 In led_listen.py code, change each reference that is `https://koreromaori.io...` to `https://dev.koreromaori.io...` In `secret.py`, change token to your token from the dev site.
@@ -120,6 +122,34 @@ In terminal on the Raspberry Pi (or over ssh in headless mode) type
 python3 led_listen.py
 ```
 Kōrero into your microphone to ask for the news or the radio stream, or say 'kia ora' to briefly turn on a light.
+
+### Phrases identified
+At the moment the program is set up to accept requests to play the latest Northand news, or to stream Te Hiku's radio. Phrases identified include:
+
+#### Play me the māori news
+Whakatairangahia ngā pūrongo kōrero o te wā
+Whakatairangatia ngā pūrongo kōrero o te wā
+Whakapāhongia ngā pūrongo kōrero o te wā
+Whakapāhotia ngā pūrongo kōrero o te wā
+Whakatairangahia ngā take Māori o te wā
+Whakatairangatia ngā take Māori o te wā
+Whakapāhongia ngā take Māori o te wā
+Whakapāhotia ngā take Māori o te wā
+
+#### What is the latest Māori news 
+He aha ngā pūrongo kōrero Māori o nāianei
+He aha ngā take Māori o nāianei
+
+#### Play my regional Māori news
+Whakapāhotia ngā pūrongo kōrero ā rohe
+Whakatairangahia ngā pūrongo kōrero ā motu
+
+#### What's the news for Te Tai Tokerau
+He aha ngā take o te wā ki Te Taitokerau
+Whakapāhongia ngā pūrongo kōrero o Te Taitokerau
+Whakapāhotia ngā pūrongo kōrero o Te Taitokerau
+Whakatairangatia ngā  kaupapa o te wā ki Te Taitokerau
+He aha ngā kaupapa o te wā ki Te Taitokerau
 
 ## Kaitiakitanga licence
 
