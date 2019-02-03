@@ -1,3 +1,9 @@
+ <video width="320" height="240" controls>
+  <source src="https://github.com/TeHikuMedia/rapere/blob/master/rapere.mp4" type="video/mp4">
+  There is a video here, but it isn't showing.
+</video> 
+
+![](rapere.mp4)
 # RĀPERE
 
 Kōrero Māori on the raspberry pi.
