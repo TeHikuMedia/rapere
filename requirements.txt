@@ -4,5 +4,5 @@ idna==2.8
 PyAudio==0.2.11
 requests==2.21.0
 RPi.GPIO==0.6.5
-urllib3==1.24.1
+urllib3==1.24.2
 webrtcvad==2.0.10
